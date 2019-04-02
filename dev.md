@@ -1,0 +1,1 @@
+- make a pyinstaller spec & script out of this

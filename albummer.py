@@ -2,36 +2,65 @@ import sys
 import os
 import markdown
 import base64
+from tqdm import tqdm
 
 
 img_extensions = ['.jpg', '.jpeg', '.png']
 vid_extensions = ['.mpg', '.mpeg', '.mp4']
 
+
 def help():
-    print(f"""
-    Usage: {sys.argv[0]} command options
-    Where command can be:
-    - make-template media_folder output_album_file.alb [num_cols=3] [order=asc] [custom.css=default.css]
-        - media_folder : the folder containing images and videos
-        - this will create the album file, ready for editing
-    
-    - generate album_file
-        - generates single-file HTML from album_file, with extension .html
-    """)
+    print(f"""Usage: {sys.argv[0]} command options [global flags]
+Where command can be:
+  make-template media_folder output.alb [num_cols] [order] [custom.css]
+    This will create the album file, ready for editing, as the first step 
+    of creating an HTML album.
+
+    Arguments:
+    - media_folder : the folder containing images and videos
+    - output.alb   : the album file to be generated
+    - num_cols     : optional, default=3. The number of columns to use when 
+                     laying out images.  Videos will always be placed on a 
+                     separate line.
+    - order        : optional, default=asc : Sort order of the media, by file 
+                     timestamp. If you specify anything other than asc, tben 
+                     descending order (newest first) will be used.
+    - custom.css   : optional, default=default.css : for pros: specify your 
+                     custom CSS file
+   
+  generate album_file
+    Generates the single-file HTML from an album file, with extension .html
+
+    Arguments:
+    - album_file   : the album file to be converted. If album_file is 
+                     my_fotos.alb, the generated HTML file will be named 
+                     my_fotos.html
+Global Flags:
+  -v               : If you pass in -v, verbose output will be displayed 
+""")
     sys.exit(0)
 
 
 def main():
+    verbose = False
+
     if len(sys.argv) == 1:
         help()
 
-    cmd = sys.argv[1]
-    argv = sys.argv[2:]
+    argv = []
+    for arg in sys.argv:
+        if arg == '-v':
+            verbose = True
+            continue
+        argv.append(arg)
+
+    cmd = argv[1]
+    argv = argv[2:]
 
     if cmd == 'make-template':
-        make_template(argv)
+        make_template(argv, verbose)
     elif cmd == 'generate':
-        generate(argv)
+        generate(argv, verbose)
     else:
         help()
 
@@ -43,7 +72,7 @@ def abort(msg, exit_code=1):
 def log(msg):
     print(msg)
 
-def make_template(argv):
+def make_template(argv, verbose):
     def get_next_n_from_list(n, l):
         i = 0
         ret = []
@@ -59,7 +88,8 @@ def make_template(argv):
     
     folder = argv[0]
     outfile = argv[1]
-    css = 'default.css'
+    css = os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), 
+            'default.css')
     num_cols = 3
     order = 'asc'
     if len(argv) > 2:
@@ -77,7 +107,8 @@ def make_template(argv):
             if not os.path.isfile(f):
                 continue
             all_media.append(f)
-    reverse = True                  # list needs to be reversed for asc, since we are going to pop
+    # list needs to be reversed for asc, since we are going to pop
+    reverse = True    
     if order != 'asc':
         reverse = False
     all_media.sort(key=os.path.getmtime, reverse=reverse)
@@ -110,7 +141,7 @@ def make_template(argv):
     with open(outfile, 'wt') as f:
         f.write(f""":folder {folder}
 :show_filenames
-:use default.css
+:use {css}
 
 # {title}
 
@@ -119,7 +150,7 @@ def make_template(argv):
     print(f'Generated {outfile}')
 
 
-def generate(argv):
+def generate(argv, verbose):
     if len(argv) < 1:
         abort('Please specify input file!')
 
@@ -133,82 +164,114 @@ def generate(argv):
     css = 'default.css'
     all_media = []
 
-
-    html_body = ''
+    html_bodies = []
     html_head = ''
+
+    lc = 0
+
+    print(f'The Albummer is processing {argv[0]}')
+    tq = tqdm(lines, bar_format='    {l_bar}{bar}|   ', ascii=True)
 
     while lines:
         line = lines.pop()
-        if not line:
-            continue
-        if line.startswith(':'):
-            cols = line.split()
-            if cols[0] == ':folder':
-                folder = cols[1]
-                all_media = []
-                for f in os.listdir(folder):
-                    _, ext = os.path.splitext(f)
-                    if ext in img_extensions or ext in vid_extensions:
-                        f = os.path.join(folder, f)
-                        if not os.path.isfile(f):
-                            continue
-                        all_media.append(os.path.basename(f))
-            elif cols[0] == ':show_filenames':
-                show_filenames = True
-            elif cols[0] == ':use':
-                css = cols[1]
-                with open(css, 'rt') as f:
-                    css = f.read()
-                    html_head = f'<style>{css}</style>'
-        else:
-            cols = line.split()
-            if cols[0] in all_media:
-                # we have a media line
-                print('MEDIA     : ', line)
-                num_cols = len(cols)
-                percent = int(100 / num_cols)
-                html = '<table><tr style="width:100%">'
-                for col in cols:
-                    html += f'<td style="width:{percent}%">'
-                    _, ext = os.path.splitext(col)
-                    if ext in img_extensions:
-                        data = img_to_html(folder, col)
-                    else:
-                        data = vid_to_html(folder, col)
-                    html += data
-                    html += '</td>'
-                html += '</tr></table>\n'
-                html_body += html
-            else:
-                # we have a markdown block beginning
-                markdown_lines = [line]
-                while lines:
-                    line = lines.pop()
-                    if not line:
-                        markdown_lines.append(line)
-                        continue
-                    cols = line.split()
-                    if cols[0] in all_media:
-                        # we have a media line -> end of markdown, put it back
-                        lines.append(line)
-                        break
-                    markdown_lines.append(line)
-                print('--')
-                for line in markdown_lines:
-                    print('MARKDOWN  : ', line)
-                print('--')
-                
-                md = '\n'.join(markdown_lines)
-                html = markdown.markdown(md)
-                html_body += html + '\n'
+        lc += 1
 
+        try:
+            if not line:
+                tq.update()
+                continue
+            if line.startswith(':'):
+                cols = line.split()
+                if cols[0] == ':folder':
+                    folder = cols[1]
+                    all_media = []
+                    if verbose:
+                        tq.write(f'{lc:3d} CONTROL   : {line}')
+                    for f in os.listdir(folder):
+                        _, ext = os.path.splitext(f)
+                        if ext in img_extensions or ext in vid_extensions:
+                            f = os.path.join(folder, f)
+                            if not os.path.isfile(f):
+                                continue
+                            all_media.append(os.path.basename(f))
+                    tq.update()
+                elif cols[0] == ':show_filenames':
+                    tq.update()
+                    if verbose:
+                        tq.write(f'{lc:3d} CONTROL   : {line}')
+                    show_filenames = True
+                elif cols[0] == ':use':
+                    tq.update()
+                    if verbose:
+                        tq.write(f'{lc:3d} CONTROL   : {line}')
+                    css = cols[1]
+                    with open(css, 'rt') as f:
+                        css = f.read()
+                        html_head = f'<style>{css}</style>'
+            else:
+                cols = line.split()
+                if cols[0] in all_media:
+                    # we have a media line
+                    if verbose:
+                        tq.write(f'{lc:3d} MEDIA     : {line}')
+                    num_cols = len(cols)
+                    percent = int(100 / num_cols)
+                    html = '<div align="center"><table><tr>'
+                    for col in cols:
+                        html += f'<td style="width:{percent}%;">' 
+                        _, ext = os.path.splitext(col)
+                        if ext in img_extensions:
+                            data = img_to_html(folder, col)
+                        else:
+                            data = vid_to_html(folder, col)
+                        html += data
+                        html += '</td><td width="10px"></td>'
+                    html += '</tr></table></div>\n'
+                    html_bodies.append(html)
+                    tq.update()
+                else:
+                    # we have a markdown block beginning
+                    markdown_lines = [(lc, line)]
+                    while lines:
+                        line = lines.pop()
+                        lc += 1
+                        if not line:
+                            markdown_lines.append((lc, line))
+                            continue
+                        cols = line.split()
+                        if cols[0] in all_media:
+                            # we have a media line -> end of markdown, 
+                            # put it back
+                            lc -= 1
+                            lines.append(line)
+                            break
+                        markdown_lines.append((lc, line))
+                    if verbose:
+                        tq.write('--')
+                        for l, line in markdown_lines:
+                            tq.write(f'{l:3d} MARKDOWN  : {line}')
+                        tq.write('--')
+                    
+                    md = '\n'.join([x[1] for x in markdown_lines])
+                    tq.update(len(markdown_lines))
+                    html = markdown.markdown(md)
+                    html_bodies.append(html + '\n')
+        except Exception as e:
+            abort(f'Line {lc} : {e}')
+            
+    tq.close()
     ofile = argv[0]
     ofile, ext = os.path.splitext(ofile)
     ofile += '.html'
-    print('Writing html...')
+    print(f'Writing {ofile}...')
     with open(ofile, 'wt') as f:
-        f.write(f'<!DOCTYPE html><html><head>{html_head}</head>\n<body>{html_body}</body>\n</html>')
-    print(f'Generated {ofile}')
+        f.write(f'<!DOCTYPE html><html><head>{html_head}</head>\n<body>')
+        for html_body in tqdm(html_bodies,
+                              bar_format='    {l_bar}{bar}|   ',
+                              ascii=True):
+            f.write(f'{html_body}')
+        f.write(f'</body>\n</html>')
+    print('READY.')
 
 
 def img_to_html(folder, img):
@@ -217,14 +280,21 @@ def img_to_html(folder, img):
         imgformat = 'png'
     else:
         imgformat = 'jpeg'
-    data = base64.b64encode(open(f, 'rb').read()).decode('utf-8').replace('\n', '')  
-    return f'<img width="100%" src="data:image/{imgformat};base64,{data}"></img>'
+    data = base64.b64encode(open(f, 'rb').read())
+    data = data.decode('utf-8').replace('\n', '')  
+    return f'''<img width="100%" 
+                    src="data:image/{imgformat};base64,{data}">
+               </img>'''
 
 
 def vid_to_html(folder, vid):
     f = os.path.join(folder, vid)
-    data = base64.b64encode(open(f, 'rb').read()).decode('utf-8').replace('\n', '')  
-    return f'<video width="100%" controls src="data:video/mp4;base64,{data}"></video>'
+    data = base64.b64encode(open(f, 'rb').read())
+    data = data.decode('utf-8').replace('\n', '')  
+    return f'''<video width="100%" 
+                      controls 
+                      src="data:video/mp4;base64,{data}">
+               </video>'''
 
 
 if __name__ == '__main__':
