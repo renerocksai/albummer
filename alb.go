@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/golang-commonmark/markdown"
+	//	"github.com/pkg/profile"
 )
 
 var img_extensions = map[string]int{".png": 1, ".jpg": 1, ".jpeg": 1}
@@ -73,6 +74,7 @@ func help() {
 }
 
 func main() {
+	//	defer profile.Start().Stop()
 	if len(os.Args) == 1 {
 		help()
 	}
