@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -26,6 +27,7 @@ type MediaFile struct {
 	path       string
 	media_type int
 	mtime      time.Time
+	html       string
 }
 
 // We create a collection type MediaFiles, as array of MediaFile structs
@@ -45,14 +47,16 @@ func (m MediaFiles) Less(i, j int) bool {
 	return m[i].mtime.Before(m[j].mtime)
 }
 
-// turn list into map[basename] -> MediaFile
-func (m MediaFiles) ToMap() map[string]MediaFile {
-	var ret map[string]MediaFile
-	ret = make(map[string]MediaFile)
+// turn list into map[basename] -> *MediaFile
+func (m MediaFiles) ToMap() map[string]*MediaFile {
+	var ret map[string]*MediaFile
+	ret = make(map[string]*MediaFile)
 
 	for _, mf := range m {
 		_, fn := filepath.Split(mf.path)
-		ret[fn] = mf
+		p := new(MediaFile)
+		*p = mf
+		ret[fn] = p
 	}
 	return ret
 }
@@ -177,6 +181,65 @@ func make_template(args []string) {
 	w.Flush()
 }
 
+func parse_folder(lines []string) (string, error) {
+	for _, line := range lines {
+		if len(line) == 0 {
+			continue
+		}
+		if line[0] == ':' {
+			// we have a control line
+			cols := strings.Fields(line)
+			switch cols[0] {
+			case ":folder":
+				folder := cols[1]
+				return folder, nil
+			}
+		}
+	}
+	return "", errors.New("No folder in album file")
+}
+
+func load_media(lines []string, folder string, all_media *map[string]*MediaFile) {
+	c := make(chan int)
+	num_media := 0
+	for _, line := range lines {
+		if len(line) == 0 {
+			continue
+		}
+		if line[0] == ':' {
+			continue
+		} else {
+			// we have a media or markdown line
+			cols := strings.Fields(line)
+			if _, ok := (*all_media)[cols[0]]; ok {
+				// we have a media line
+				for _, col := range cols {
+					if media_file, ok := (*all_media)[col]; ok {
+						switch (*media_file).media_type {
+						case MEDIA_TYPE_IMG:
+							go func(media_file *MediaFile, c chan int) {
+								(*media_file).html = img_to_html(folder, col)
+								c <- 1
+							}(media_file, c)
+							num_media++
+						case MEDIA_TYPE_VID:
+							go func(media_file *MediaFile, c chan int) {
+								(*media_file).html = vid_to_html(folder, col)
+								c <- 1
+							}(media_file, c)
+							num_media++
+						}
+					}
+				}
+			}
+		}
+	}
+	for i := 0; i < num_media; i++ {
+		// wait for completion
+		_ = <-c
+	}
+}
+
 func generate(args []string) {
 	if len(args) < 1 {
 		abort("Please specify an input file!", 1)
@@ -201,7 +264,7 @@ func generate(args []string) {
 	var folder string
 	var css string
 	//	show_filenames := false
-	var all_media map[string]MediaFile
+	var all_media map[string]*MediaFile
 
 	var html_bodies []string
 	var html_head string
@@ -209,6 +272,19 @@ func generate(args []string) {
 	markdown_parser := markdown.New()
 	lc := 0
 	lc_max := len(lines)
+
+	folder, err = parse_folder(lines)
+	if err != nil {
+		abort("No folder in album file!", 1)
+	}
+
+	all_media_list, err := get_all_media(folder)
+	if err != nil {
+		panic(err)
+	}
+	all_media = all_media_list.ToMap()
+
+	load_media(lines, folder, &all_media)
 
 	for lc < lc_max {
 		line := lines[lc]
@@ -221,13 +297,6 @@ func generate(args []string) {
 			// we have a control line
 			cols := strings.Fields(line)
 			switch cols[0] {
-			case ":folder":
-				folder = cols[1]
-				all_media_list, err := get_all_media(folder)
-				if err != nil {
-					panic(err)
-				}
-				all_media = all_media_list.ToMap()
 			case ":show_filenames":
 				//				show_filenames = true
 			case ":use":
@@ -249,14 +318,7 @@ func generate(args []string) {
 				for _, col := range cols {
 					html += fmt.Sprintf(`<td style="width:%d%%;">`, percent)
 					if media_file, ok := all_media[col]; ok {
-						var data string
-						switch media_file.media_type {
-						case MEDIA_TYPE_IMG:
-							data = img_to_html(folder, col)
-						case MEDIA_TYPE_VID:
-							data = vid_to_html(folder, col)
-						}
-						html += data
+						html += (*media_file).html
 						html += `</td><td width="10px"></td>`
 					}
 				}
@@ -326,7 +388,7 @@ func get_all_media(root string) (MediaFiles, error) {
 				media_type = MEDIA_TYPE_VID
 			}
 			if is_img || is_vid {
-				files = append(files, MediaFile{path, media_type, info.ModTime()})
+				files = append(files, MediaFile{path, media_type, info.ModTime(), ""})
 			}
 		}
 		return nil
@@ -354,7 +416,7 @@ func vid_to_html(folder string, vid string) string {
 	if err != nil {
 		return ""
 	}
-	return fmt.Sprintf(`<video width="100%%" controls src="data:video/mp4;base64,%s"></video>`, base64.StdEncoding.EncodeToString(data))
+	return fmt.Sprintf(`<div align="center"><video width="auto"  max-width="100%%" height="640px" controls src="data:video/mp4;base64,%s"></video></div>`, base64.StdEncoding.EncodeToString(data))
 }
 
 var usage = `Usage: %s command options [global flags]
