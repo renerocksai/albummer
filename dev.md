@@ -1,1 +1,2 @@
 - make a pyinstaller spec & script out of this
+    - no, just re-wrote it in go
