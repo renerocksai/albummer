@@ -179,6 +179,7 @@ func make_template(args []string) {
 		panic(err)
 	}
 	w.Flush()
+	fmt.Println("Generated", outfile)
 }
 
 func parse_folder(lines []string) (string, error) {
@@ -234,7 +235,9 @@ func load_media(lines []string, folder string, all_media *map[string]*MediaFile)
 			}
 		}
 	}
+
 	for i := 0; i < num_media; i++ {
+		fmt.Print(fmt.Sprintf("\r  Loading image / video %4d of %-4d ", i+1, num_media))
 		// wait for completion
 		_ = <-c
 	}
@@ -284,12 +287,15 @@ func generate(args []string) {
 	}
 	all_media = all_media_list.ToMap()
 
+	fmt.Println("The Albummer is processing", input_file)
 	load_media(lines, folder, &all_media)
+	fmt.Println()
 
 	for lc < lc_max {
 		line := lines[lc]
 		lc += 1
 
+		fmt.Print(fmt.Sprintf("\r  Generating for line   %4d of %-4d ", lc, lc_max))
 		if len(line) == 0 {
 			continue
 		}
@@ -347,6 +353,7 @@ func generate(args []string) {
 			}
 		}
 	}
+	fmt.Println()
 
 	ext := filepath.Ext(input_file)
 	out_file := strings.Replace(input_file, ext, ".html", 1)
@@ -361,17 +368,21 @@ func generate(args []string) {
 	if err != nil {
 		panic(err)
 	}
-	for _, html_body := range html_bodies {
+	num_bodies := len(html_bodies)
+	for index, html_body := range html_bodies {
+		fmt.Print(fmt.Sprintf("\r  Writing HTML body     %4d of %-4d ", index+1, num_bodies))
 		_, err = w.WriteString(html_body)
 		if err != nil {
 			panic(err)
 		}
 	}
+	fmt.Println()
 	_, err = w.WriteString("</body>\n</html>")
 	if err != nil {
 		panic(err)
 	}
 	w.Flush()
+	fmt.Println("Generated", out_file)
 }
 
 func get_all_media(root string) (MediaFiles, error) {
@@ -419,7 +430,7 @@ func vid_to_html(folder string, vid string) string {
 	return fmt.Sprintf(`<div align="center"><video width="auto"  max-width="100%%" height="640px" controls src="data:video/mp4;base64,%s"></video></div>`, base64.StdEncoding.EncodeToString(data))
 }
 
-var usage = `Usage: %s command options [global flags]
+var usage = `Usage: %s command options 
 Where command can be:
   make-template media_folder output.alb [num_cols] [order] [custom.css]
     This will create the album file, ready for editing, as the first step 
@@ -444,6 +455,4 @@ Where command can be:
     - album_file   : the album file to be converted. If album_file is 
                      my_fotos.alb, the generated HTML file will be named 
                      my_fotos.html
-Global Flags:
-  -v               : If you pass in -v, verbose output will be displayed 
 `
