@@ -22,6 +22,7 @@ want to share them?
 
 # By example
 
+## Create an album text file via make-template
 Just make sure you have a single folder that contains all the photos and videos
 you want to share. For example, download and unzip an album from Google Photos,
 or just copy a folder from your mobile phone. In this example, we use the 
@@ -95,6 +96,8 @@ Generated conference.html
 
 ... and open `conference.html` in the browser.
 
+## Edit generated album file
+
 We like what we see, but figure, we want to tell a bit more about our conference trip, and
 also want a different layout. So we just edit `conference.alb`:
 
@@ -128,6 +131,8 @@ Much better! Notice how we just inserted a unicode emoji!
 
 Now we only need to re-generate the HTML:
 
+## Generate HTML from album file
+
 ```
 $ albummer generate conference.alb      # [enter]
 The Albummer is processing conference.alb
@@ -140,6 +145,8 @@ Generated conference.html
 ... and the result is ...
 
 ![demo](demo.png)
+
+We can now go and upload this to our Dropbox/Google Drive/OneDrive/Trezorit/... and share it.
 
 # Command Line Reference
 
