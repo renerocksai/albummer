@@ -212,6 +212,9 @@ func load_media(lines []string, folder string, all_media *map[string]*MediaFile)
 		} else {
 			// we have a media or markdown line
 			cols := strings.Fields(line)
+			if len(cols) == 0 {
+				continue
+			}
 			if _, ok := (*all_media)[cols[0]]; ok {
 				// we have a media line
 				for _, col := range cols {
@@ -316,6 +319,9 @@ func generate(args []string) {
 		} else {
 			// we have a media or markdown line
 			cols := strings.Fields(line)
+			if len(cols) == 0 {
+				continue
+			}
 			if _, ok := all_media[cols[0]]; ok {
 				// we have a media line
 				num_cols := len(cols)
@@ -419,7 +425,7 @@ func img_to_html(folder string, img string) string {
 	} else {
 		img_format = "jpeg"
 	}
-	return fmt.Sprintf(`<img width="100%%" src="data:image/%s;base64,%s"></img>`, img_format, base64.StdEncoding.EncodeToString(data))
+	return fmt.Sprintf(`<div class="imgdiv"><img width="100%%" src="data:image/%s;base64,%s"></img></div>`, img_format, base64.StdEncoding.EncodeToString(data))
 }
 
 func vid_to_html(folder string, vid string) string {
@@ -427,7 +433,7 @@ func vid_to_html(folder string, vid string) string {
 	if err != nil {
 		return ""
 	}
-	return fmt.Sprintf(`<div align="center"><video width="auto"  max-width="100%%" height="640px" controls src="data:video/mp4;base64,%s"></video></div>`, base64.StdEncoding.EncodeToString(data))
+	return fmt.Sprintf(`<div align="center"><video width="auto"  max-width="100%%" controls src="data:video/mp4;base64,%s"></video></div>`, base64.StdEncoding.EncodeToString(data))
 }
 
 var usage = `Usage: %s command options 
