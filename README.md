@@ -49,7 +49,7 @@ In our example, the media files are named by their time-stamps. So at 09:45:05, 
 To convert this folder into an album file for editing, we just run:
 
 ```bash
-albummer Conference2019 conference.alb       # [enter]
+albummer make-template Conference2019 conference.alb       # [enter]
 Generated conference.alb
 ```
 
