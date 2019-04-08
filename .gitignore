@@ -3,3 +3,5 @@
 *.html
 MIPR2019/
 launch.json
+Conference2019/
+*.code-workspace

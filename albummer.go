@@ -218,16 +218,16 @@ func load_media(lines []string, folder string, all_media *map[string]*MediaFile)
 					if media_file, ok := (*all_media)[col]; ok {
 						switch (*media_file).media_type {
 						case MEDIA_TYPE_IMG:
-							go func(media_file *MediaFile, c chan int) {
+							go func(media_file *MediaFile, col string, c chan int) {
 								(*media_file).html = img_to_html(folder, col)
 								c <- 1
-							}(media_file, c)
+							}(media_file, col, c)
 							num_media++
 						case MEDIA_TYPE_VID:
-							go func(media_file *MediaFile, c chan int) {
+							go func(media_file *MediaFile, col string, c chan int) {
 								(*media_file).html = vid_to_html(folder, col)
 								c <- 1
-							}(media_file, c)
+							}(media_file, col, c)
 							num_media++
 						}
 					}
@@ -443,7 +443,7 @@ Where command can be:
                      laying out images.  Videos will always be placed on a 
                      separate line.
     - order        : optional, default=asc : Sort order of the media, by file 
-                     timestamp. If you specify anything other than asc, tben 
+                     timestamp. If you specify anything other than asc, then 
                      descending order (newest first) will be used.
     - custom.css   : optional, default=default.css : for pros: specify your 
                      custom CSS file
