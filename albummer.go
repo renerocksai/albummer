@@ -367,6 +367,7 @@ func generate(args []string) {
 	if err != nil {
 		panic(err)
 	}
+	defer fmt.Println("Generated", out_file, "                ")
 	defer of.Close()
 
 	w := bufio.NewWriter(of)
@@ -388,7 +389,7 @@ func generate(args []string) {
 		panic(err)
 	}
 	w.Flush()
-	fmt.Println("Generated", out_file)
+	fmt.Print("   (closing file ...)\r")
 }
 
 func get_all_media(root string) (MediaFiles, error) {
