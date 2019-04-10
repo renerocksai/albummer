@@ -44,7 +44,7 @@ IMG_20190330_094506.jpg
 IMG_20190330_094507.jpg
 IMG_20190330_094508.jpg
 IMG_20190330_094509.jpg
-VID_20190330_094505.jpg
+VID_20190330_094505.mp4
 ```
 
 As you can see, it contains 10 files: 9 photos and 1 video.
@@ -70,7 +70,7 @@ This generated the following text file, called `conference.alb`:
 IMG_20190330_094500.jpg   IMG_20190330_094501.jpg   IMG_20190330_094502.jpg 
 IMG_20190330_094503.jpg   IMG_20190330_094504.jpg 
 
-VID_20190330_094505.jpg 
+VID_20190330_094505.mp4 
 
 IMG_20190330_094506.jpg   IMG_20190330_094507.jpg   IMG_20190330_094508.jpg 
 IMG_20190330_094509.jpg   
@@ -123,7 +123,7 @@ IMG_20190330_094502.jpg   IMG_20190330_094503.jpg   IMG_20190330_094504.jpg
 
 And here is the whole video of the keynote:
 
-VID_20190330_094505.jpg 
+VID_20190330_094505.mp4 
 
 A few interesting ones:
 IMG_20190330_094506.jpg   IMG_20190330_094507.jpg   
