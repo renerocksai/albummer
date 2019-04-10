@@ -4,7 +4,20 @@ h1 {
 }
 
 p {
-	font-family: tahoma;
+	font-family: Tahoma;
+}
+
+li {
+	font-family: Tahoma;
+    margin-top: 10px;
+}
+
+li:first-child {
+    margin-top:0;
+}
+
+li:not(:last-child) {
+    margin-bottom: 5px;
 }
 
 table {

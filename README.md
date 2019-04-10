@@ -20,6 +20,11 @@ want to share them?
 2. Edit the generated album file
 3. Generate HTML from the album file
 
+![albummer](https://user-images.githubusercontent.com/30892199/55867146-384da700-5b82-11e9-967b-fb91aac634f8.gif)
+
+![demo](demo.png)
+
+
 # By example
 
 ## Create an album text file via make-template
