@@ -13,7 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-commonmark/markdown"
+	"github.com/microcosm-cc/bluemonday"
+	"gopkg.in/russross/blackfriday.v2"
 	//	"github.com/pkg/profile"
 )
 
@@ -283,7 +284,6 @@ func generate(args []string) {
 	var html_bodies []string
 	var html_head string
 
-	markdown_parser := markdown.New()
 	lc := 0
 	lc_max := len(lines)
 
@@ -362,8 +362,9 @@ func generate(args []string) {
 					}
 					markdown_lines += "\n" + line
 				}
-				html := markdown_parser.RenderToString([]byte(markdown_lines))
-				html_bodies = append(html_bodies, html)
+				unsafe := blackfriday.Run([]byte(markdown_lines))
+				html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+				html_bodies = append(html_bodies, string(html))
 			}
 		}
 	}
