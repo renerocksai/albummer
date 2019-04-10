@@ -19,9 +19,11 @@ import (
 
 var img_extensions = map[string]int{".png": 1, ".jpg": 1, ".jpeg": 1}
 var vid_extensions = map[string]int{".mp4": 1}
+var wav_extensions = map[string]int{".wav": 1}
 
 const MEDIA_TYPE_IMG = 0
 const MEDIA_TYPE_VID = 1
+const MEDIA_TYPE_WAV = 2
 
 type MediaFile struct {
 	path       string
@@ -145,7 +147,7 @@ func make_template(args []string) {
 
 	for _, m := range all_media {
 		_, fn := filepath.Split(m.path)
-		if m.media_type == MEDIA_TYPE_VID {
+		if m.media_type == MEDIA_TYPE_VID || m.media_type == MEDIA_TYPE_WAV {
 			if line_len > 0 {
 				media_body += "\n"
 			}
@@ -229,6 +231,12 @@ func load_media(lines []string, folder string, all_media *map[string]*MediaFile)
 						case MEDIA_TYPE_VID:
 							go func(media_file *MediaFile, col string, c chan int) {
 								(*media_file).html = vid_to_html(folder, col)
+								c <- 1
+							}(media_file, col, c)
+							num_media++
+						case MEDIA_TYPE_WAV:
+							go func(media_file *MediaFile, col string, c chan int) {
+								(*media_file).html = wav_to_html(folder, col)
 								c <- 1
 							}(media_file, col, c)
 							num_media++
@@ -400,12 +408,15 @@ func get_all_media(root string) (MediaFiles, error) {
 			ext := get_lower_extension(path)
 			_, is_img := img_extensions[ext]
 			_, is_vid := vid_extensions[ext]
+			_, is_wav := wav_extensions[ext]
 
 			var media_type int = MEDIA_TYPE_IMG
 			if is_vid {
 				media_type = MEDIA_TYPE_VID
+			} else if is_wav {
+				media_type = MEDIA_TYPE_WAV
 			}
-			if is_img || is_vid {
+			if is_img || is_vid || is_wav {
 				files = append(files, MediaFile{path, media_type, info.ModTime(), ""})
 			}
 		}
@@ -435,6 +446,14 @@ func vid_to_html(folder string, vid string) string {
 		return ""
 	}
 	return fmt.Sprintf(`<div align="center"><video width="auto"  max-width="100%%" controls src="data:video/mp4;base64,%s"></video></div>`, base64.StdEncoding.EncodeToString(data))
+}
+
+func wav_to_html(folder string, vid string) string {
+	data, err := ioutil.ReadFile(filepath.Join(folder, vid))
+	if err != nil {
+		return ""
+	}
+	return fmt.Sprintf(`<div align="center"><audio controls src="data:audio/x-wav;base64,%s"></audio></div>`, base64.StdEncoding.EncodeToString(data))
 }
 
 var usage = `Usage: %s command options 
