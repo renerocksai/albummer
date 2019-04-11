@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"html"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -362,6 +363,7 @@ func generate(args []string) {
 					}
 					markdown_lines += "\n" + line
 				}
+				markdown_lines = html.EscapeString(markdown_lines)
 				unsafe := blackfriday.Run([]byte(markdown_lines))
 				html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
 				html_bodies = append(html_bodies, string(html))
@@ -380,7 +382,7 @@ func generate(args []string) {
 	defer of.Close()
 
 	w := bufio.NewWriter(of)
-	_, err = w.WriteString(fmt.Sprintf("<!DOCTYPE html><html><head>%s</head>\n<body>", html_head))
+	_, err = w.WriteString(fmt.Sprintf("<!DOCTYPE html><html><head><meta charset=\"UTF-8\">%s</head>\n<body>", html_head))
 	if err != nil {
 		panic(err)
 	}
