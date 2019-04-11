@@ -1,7 +1,7 @@
-# The Albummer - HTML Photo Albums made easy
+# The Albummer - HTML Multimedia Albums made easy
 
 This is a command line based, super easy tool to create simple but nice photo/
-video albums, with Markdown formatted text in between rows of media. It is 
+video/audio albums, with Markdown formatted text in between rows of media. It is 
 written in the Go language (based on the initial Python implementation), and
 binaries - no setup, no dependencies - are supported (coming soon).
 
@@ -84,7 +84,7 @@ This album file specifies:
 - the heading of this album is `Conference2019`, as the `#` denotes a Markdown heading
 - the first (files are sorted by file-time) 3 images should be layed out in a 3-column row
 - the 4th and 5th images go into a 2-column row, because
-- the video is placed on its own row
+- the video is placed on its own row (audio would be, too)
 - followed by 3-column image rows until the end
 - since there are only 10 files, the last two images end up in a 2-column row
 
@@ -138,7 +138,7 @@ Now we only need to re-generate the HTML:
 
 ## Generate HTML from album file
 
-```
+```bash
 $ albummer generate conference.alb      # [enter]
 The Albummer is processing conference.alb
   Loading image / video   10 of 10   
@@ -152,6 +152,12 @@ Generated conference.html
 ![demo](demo.png)
 
 We can now go and upload this to our Dropbox/Google Drive/OneDrive/Trezorit/... and share it.
+
+# Supported file formats by file extension
+
+- Images: `.png`, `.jpg`, `.jpeg`
+- Videos: `.mp4`
+- Audio : `.wav`
 
 # Command Line Reference
 
