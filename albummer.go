@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"html"
+//	"html"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -363,7 +363,7 @@ func generate(args []string) {
 					}
 					markdown_lines += "\n" + line
 				}
-				markdown_lines = html.EscapeString(markdown_lines)
+                // markdown_lines = html.EscapeString(markdown_lines)
 				unsafe := blackfriday.Run([]byte(markdown_lines))
 				html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
 				html_bodies = append(html_bodies, string(html))
