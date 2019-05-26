@@ -25,5 +25,20 @@ table {
 }
 
 video {
-	height: 640px;
+}
+
+.imgdiv {
+    display: grid;
+    height: 100%;
+}
+
+.viddiv {
+    display: grid;
+    height: 100%;
+}
+
+.center-fit {
+    max-width: 100%;
+    max-height: 100vh;
+    margin: auto
 }

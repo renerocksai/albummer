@@ -440,7 +440,7 @@ func img_to_html(folder string, img string) string {
 	} else {
 		img_format = "jpeg"
 	}
-	return fmt.Sprintf(`<div class="imgdiv"><img width="100%%" src="data:image/%s;base64,%s"></img></div>`, img_format, base64.StdEncoding.EncodeToString(data))
+	return fmt.Sprintf(`<div class="imgdiv"><img class="center-fit" src="data:image/%s;base64,%s"></img></div>`, img_format, base64.StdEncoding.EncodeToString(data))
 }
 
 func vid_to_html(folder string, vid string) string {
@@ -448,7 +448,7 @@ func vid_to_html(folder string, vid string) string {
 	if err != nil {
 		return ""
 	}
-	return fmt.Sprintf(`<div align="center"><video width="auto"  max-width="100%%" controls src="data:video/mp4;base64,%s"></video></div>`, base64.StdEncoding.EncodeToString(data))
+	return fmt.Sprintf(`<div class="viddiv"><video class="center-fit" controls src="data:video/mp4;base64,%s"></video></div>`, base64.StdEncoding.EncodeToString(data))
 }
 
 func wav_to_html(folder string, vid string) string {
